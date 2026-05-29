@@ -19,4 +19,33 @@ jobs:
           echo "SecureFlow pipeline is alive"
           echo "Commit: ${{ github.sha }}"
           echo "Branch: ${{ github.ref_name }}"
-          echo "Triggered by: ${{ github.event_name }}"
+
+  stage-1-secrets:
+    name: Stage 1 - Gitleaks Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  stage-2-sast:
+    name: Stage 2 - SonarQube SAST
+    runs-on: ubuntu-latest
+    needs: stage-1-secrets
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarQube scan
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
