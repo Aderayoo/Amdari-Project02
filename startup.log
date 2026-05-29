@@ -1,0 +1,140 @@
+time="2026-05-25T19:31:08-07:00" level=warning msg="/Users/itwl/Amdari-Project02/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Image amdari-project02-auth-service Building 
+ Image amdari-project02-transaction-service Building 
+ Image amdari-project02-frontend Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.63kB done
+#1 DONE 0.0s
+
+#2 [frontend internal] load build definition from Dockerfile
+#2 transferring dockerfile: 290B 0.0s done
+#2 DONE 0.1s
+
+#3 [transaction-service internal] load build definition from Dockerfile
+#3 transferring dockerfile: 290B 0.0s done
+#3 DONE 0.1s
+
+#4 [auth-service internal] load build definition from Dockerfile
+#4 transferring dockerfile: 426B 0.0s done
+#4 DONE 0.1s
+
+#5 [auth-service internal] load metadata for docker.io/library/python:3.9-slim
+#5 DONE 0.8s
+
+#6 [auth-service internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [frontend internal] load .dockerignore
+#7 transferring context: 2B done
+#7 DONE 0.0s
+
+#8 [transaction-service internal] load .dockerignore
+#8 transferring context: 2B done
+#8 DONE 0.0s
+
+#9 [auth-service internal] load build context
+#9 transferring context: 63B done
+#9 DONE 0.0s
+
+#10 [frontend internal] load build context
+#10 transferring context: 63B done
+#10 DONE 0.0s
+
+#11 [transaction-service internal] load build context
+#11 transferring context: 63B done
+#11 DONE 0.0s
+
+#12 [transaction-service 1/5] FROM docker.io/library/python:3.9-slim@sha256:2d97f6910b16bd338d3060f261f53f144965f755599aab1acda1e13cf1731b1b
+#12 resolve docker.io/library/python:3.9-slim@sha256:2d97f6910b16bd338d3060f261f53f144965f755599aab1acda1e13cf1731b1b
+#12 resolve docker.io/library/python:3.9-slim@sha256:2d97f6910b16bd338d3060f261f53f144965f755599aab1acda1e13cf1731b1b 0.1s done
+#12 DONE 0.1s
+
+#13 [auth-service 3/5] COPY requirements.txt .
+#13 CACHED
+
+#14 [auth-service 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#14 CACHED
+
+#15 [auth-service 5/5] COPY app.py .
+#15 CACHED
+
+#16 [transaction-service 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#16 CACHED
+
+#17 [transaction-service 3/5] COPY requirements.txt .
+#17 CACHED
+
+#18 [transaction-service 5/5] COPY app.py .
+#18 CACHED
+
+#19 [frontend 2/5] WORKDIR /app
+#19 CACHED
+
+#20 [frontend 3/5] COPY requirements.txt .
+#20 CACHED
+
+#21 [frontend 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#21 CACHED
+
+#22 [frontend 5/5] COPY app.py .
+#22 CACHED
+
+#23 [transaction-service] exporting to image
+#23 exporting layers 0.0s done
+#23 exporting manifest sha256:d238d63c83e1615e7024788b81eb04917bf99339382e5a3272e031ea282103db 0.0s done
+#23 exporting config sha256:b3dfe24124ca0ded59e594dba2e741452b9122762115903f0279ea3ca3446736 done
+#23 exporting attestation manifest sha256:f7d478780bc6a4d9fbc78bcf0d05658e6001a2ebf811f2eff43b23cc6d7fbc96
+#23 exporting attestation manifest sha256:f7d478780bc6a4d9fbc78bcf0d05658e6001a2ebf811f2eff43b23cc6d7fbc96 0.1s done
+#23 exporting manifest list sha256:024051260ae3aee890240ef220ad28456b7079df8aab1359dfba2c4f70926a0c
+#23 exporting manifest list sha256:024051260ae3aee890240ef220ad28456b7079df8aab1359dfba2c4f70926a0c 0.0s done
+#23 naming to docker.io/library/amdari-project02-transaction-service:latest 0.0s done
+#23 unpacking to docker.io/library/amdari-project02-transaction-service:latest 0.0s done
+#23 DONE 0.4s
+
+#24 [frontend] exporting to image
+#24 exporting layers 0.0s done
+#24 exporting manifest sha256:99729f46a7b4916fb150a2f9b23def0e48f1e675fe047bfbc08cbb193c92a997 done
+#24 exporting config sha256:1dac73a53d053c49ba506b2d95a32bfaeaeb6f87b593e5499e257551291dc73e 0.0s done
+#24 exporting attestation manifest sha256:6de3884f595d33e7c34dba04183bdab0afa70bb7cf63931128197e36d60bab2c 0.1s done
+#24 exporting manifest list sha256:21d117f5dbabcb743470a24f4ee81393b401724abadf2c7d508418d1b6a1a967 0.0s done
+#24 naming to docker.io/library/amdari-project02-frontend:latest 0.0s done
+#24 unpacking to docker.io/library/amdari-project02-frontend:latest 0.0s done
+#24 DONE 0.4s
+
+#25 [auth-service] exporting to image
+#25 exporting layers 0.0s done
+#25 exporting manifest sha256:aa78b642c47348c7ff9f701d7678bdd5c1c0b574f28fd237e4db771aaf1f2776 0.0s done
+#25 exporting config sha256:966bd63b53fa0522696c59e78c71fb8c9623a1d396aea0c4ae193c69fac5f992 0.0s done
+#25 exporting attestation manifest sha256:a5a319d4e4ced541f7821d95997a2c8e4e952af82e3b4d040b5d34ae0776d32a 0.1s done
+#25 exporting manifest list sha256:be358f0eb399e35f3a94e202fa45a1e300f1a7f90faa6eb6d66f1b6b8ffda11d 0.0s done
+#25 naming to docker.io/library/amdari-project02-auth-service:latest 0.0s done
+#25 unpacking to docker.io/library/amdari-project02-auth-service:latest 0.0s done
+#25 DONE 0.4s
+
+#26 [transaction-service] resolving provenance for metadata file
+#26 DONE 0.2s
+
+#27 [frontend] resolving provenance for metadata file
+#27 DONE 0.1s
+
+#28 [auth-service] resolving provenance for metadata file
+#28 DONE 0.1s
+ Image amdari-project02-auth-service Built 
+ Image amdari-project02-transaction-service Built 
+ Image amdari-project02-frontend Built 
+ Container amdari-project02-auth-db-1 Running 
+ Container amdari-project02-transaction-db-1 Running 
+ Container amdari-project02-auth-service-1 Recreate 
+ Container amdari-project02-auth-service-1 Recreated 
+ Container amdari-project02-transaction-service-1 Recreate 
+ Container amdari-project02-transaction-service-1 Recreated 
+ Container amdari-project02-frontend-1 Recreate 
+ Container amdari-project02-frontend-1 Recreated 
+Attaching to auth-db-1, auth-service-1, frontend-1, transaction-db-1, transaction-service-1
+ Container amdari-project02-auth-service-1 Starting 
+ Container amdari-project02-auth-service-1 Started 
+ Container amdari-project02-transaction-service-1 Starting 
+ Container amdari-project02-transaction-service-1 Started 
+ Container amdari-project02-frontend-1 Starting 
+Error response from daemon: ports are not available: exposing port TCP 0.0.0.0:5000 -> 127.0.0.1:0: listen tcp 0.0.0.0:5000: bind: address already in use
