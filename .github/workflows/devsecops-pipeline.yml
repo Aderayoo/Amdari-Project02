@@ -48,3 +48,66 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
+
+  stage-3-image-scan:
+    name: Stage 3 - Trivy Image Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build auth-service image
+        run: docker build -t auth-service:test ./services/auth-service
+
+      - name: Scan auth-service
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: auth-service:test
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+
+      - name: Build transaction-service image
+        run: docker build -t transaction-service:test ./services/transaction-service
+
+      - name: Scan transaction-service
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: transaction-service:test
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+
+      - name: Build frontend image
+        run: docker build -t frontend:test ./services/frontend
+
+      - name: Scan frontend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: frontend:test
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+
+  stage-4-iac-scan:
+    name: Stage 4 - IaC Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trivy K8s manifest scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: config
+          scan-ref: infra/kubernetes/
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+
+      - name: Checkov Terraform scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: infra/terraform/
+          soft_fail: false
+          framework: terraform
