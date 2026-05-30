@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: secureflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+        team: devsecops
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "auth-service"
+        vault.hashicorp.com/agent-inject-secret-config: "secureflow/data/auth-service"
+        vault.hashicorp.com/agent-inject-template-config: |
+          {{- with secret "secureflow/data/auth-service" -}}
+          DB_PASSWORD="{{ .Data.data.db_password }}"
+          JWT_SECRET="{{ .Data.data.jwt_secret }}"
+          DB_HOST="{{ .Data.data.db_host }}"
+          DB_NAME="{{ .Data.data.db_name }}"
+          DB_USER="{{ .Data.data.db_user }}"
+          {{- end }}
+    spec:
+      serviceAccountName: auth-service
+      containers:
+        - name: auth-service
+          image: auth-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5001
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
