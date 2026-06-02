@@ -26,12 +26,22 @@ spec:
           {{- end }}
     spec:
       serviceAccountName: transaction-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: transaction-service
           image: transaction-service:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5002
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               memory: "128Mi"

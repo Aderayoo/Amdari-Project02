@@ -23,12 +23,22 @@ spec:
           {{- end }}
     spec:
       serviceAccountName: frontend
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: frontend
           image: frontend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               memory: "128Mi"
