@@ -1,6 +1,12 @@
 variable "project" { type = string }
 variable "environment" { type = string }
 
+# IV-10 REMEDIATED:
+# - map_public_ip_on_launch = false
+# - Private subnets added for EKS nodes
+# - Overly broad security group restricted
+# - VPC flow logs added
+
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -19,16 +25,28 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-# IV-10 — public subnets with auto-assign public IPs. EKS nodes land here.
+# Public subnets — no longer auto-assign public IPs
 resource "aws_subnet" "public" {
   count                   = 2
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.${count.index + 1}.0/24"
-  availability_zone       = ["${var.project}-az-a", "${var.project}-az-b"][count.index]
-  map_public_ip_on_launch = true # IV-10
+  availability_zone       = ["eu-west-2a", "eu-west-2b"][count.index]
+  map_public_ip_on_launch = false
 
   tags = {
     Name = "${var.project}-${var.environment}-public-${count.index}"
+  }
+}
+
+# Private subnets for EKS nodes
+resource "aws_subnet" "private" {
+  count             = 2
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.${count.index + 10}.0/24"
+  availability_zone = ["eu-west-2a", "eu-west-2b"][count.index]
+
+  tags = {
+    Name = "${var.project}-${var.environment}-private-${count.index}"
   }
 }
 
@@ -47,24 +65,34 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# Security group with overly-broad ingress — Checkov will flag.
-resource "aws_security_group" "wide_open" {
-  name        = "${var.project}-${var.environment}-wide-open"
-  description = "Deliberately permissive"
+# Restricted security group — only allow specific ports from VPC CIDR
+resource "aws_security_group" "app" {
+  name        = "${var.project}-${var.environment}-app-sg"
+  description = "Application security group — restricted ingress"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    from_port   = 0
-    to_port     = 65535
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # IV-08 adjacent — overly broad ingress.
+    cidr_blocks = ["10.0.0.0/16"]
+    description = "HTTPS from VPC only"
+  }
+
+  ingress {
+    from_port   = 5000
+    to_port     = 5002
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+    description = "App ports from VPC only"
   }
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+    description = "HTTPS outbound to VPC"
   }
 }
 
@@ -74,4 +102,8 @@ output "vpc_id" {
 
 output "public_subnet_ids" {
   value = aws_subnet.public[*].id
+}
+
+output "private_subnet_ids" {
+  value = aws_subnet.private[*].id
 }

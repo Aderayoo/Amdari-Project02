@@ -1,0 +1,138 @@
+# Default deny — block ALL traffic unless explicitly allowed
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: secureflow
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Frontend — accepts external traffic, talks to auth (5001) and transaction (5002) only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-network-policy
+  namespace: secureflow
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - {}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: auth-service
+      ports:
+        - port: 5001
+    - to:
+        - podSelector:
+            matchLabels:
+              app: transaction-service
+      ports:
+        - port: 5002
+    - ports:
+        - port: 53
+          protocol: UDP
+---
+# Auth-service — accepts from frontend and transaction, talks to auth-db only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-service-network-policy
+  namespace: secureflow
+spec:
+  podSelector:
+    matchLabels:
+      app: auth-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - port: 5001
+    - from:
+        - podSelector:
+            matchLabels:
+              app: transaction-service
+      ports:
+        - port: 5001
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: auth-db
+      ports:
+        - port: 5432
+    - ports:
+        - port: 53
+          protocol: UDP
+---
+# Transaction-service — accepts from frontend, talks to transaction-db and auth-service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: transaction-service-network-policy
+  namespace: secureflow
+spec:
+  podSelector:
+    matchLabels:
+      app: transaction-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - port: 5002
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: transaction-db
+      ports:
+        - port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: auth-service
+      ports:
+        - port: 5001
+    - ports:
+        - port: 53
+          protocol: UDP
+---
+# Allow all secureflow pods to reach Vault in the vault namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-vault-egress
+  namespace: secureflow
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: vault
+      ports:
+        - port: 8200
+    - ports:
+        - port: 53
+          protocol: UDP

@@ -3,40 +3,65 @@ kind: Deployment
 metadata:
   name: frontend
   namespace: secureflow
+  labels:
+    app: frontend
+    team: devsecops
+    version: "1.0"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      svc: frontend
+      app: frontend
   template:
     metadata:
       labels:
-        svc: frontend
+        app: frontend
+        team: devsecops
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "frontend"
+        vault.hashicorp.com/agent-inject-secret-config: "secureflow/data/frontend"
+        vault.hashicorp.com/agent-inject-template-config: |
+          {{- with secret "secureflow/data/frontend" -}}
+          SESSION_SECRET="{{ .Data.data.session_secret }}"
+          {{- end }}
     spec:
+      serviceAccountName: frontend
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: frontend
-          image: secureflow/frontend:latest   # CK-06
+          image: frontend@sha256:e640e6e945b40ba7dbba8b39e618aa46142e27816c93b5870f855a12ae30482f
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
-          envFrom:
-            - configMapRef:
-                name: secureflow-config
           securityContext:
-            privileged: true                # CK-04
-            allowPrivilegeEscalation: true  # CK-04
-            runAsUser: 0                    # CK-02
-          # CK-05 — no resources.
+            allowPrivilegeEscalation: false
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: frontend
   namespace: secureflow
+  labels:
+    app: frontend
+    team: devsecops
 spec:
-  type: NodePort
   selector:
-    svc: frontend
+    app: frontend
   ports:
     - port: 5000
       targetPort: 5000
-      nodePort: 30080

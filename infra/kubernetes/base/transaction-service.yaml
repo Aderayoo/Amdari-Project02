@@ -3,50 +3,68 @@ kind: Deployment
 metadata:
   name: transaction-service
   namespace: secureflow
+  labels:
+    app: transaction-service
+    team: devsecops
+    version: "1.0"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      svc: transaction-service
+      app: transaction-service
   template:
     metadata:
       labels:
-        svc: transaction-service
+        app: transaction-service
+        team: devsecops
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "transaction-service"
+        vault.hashicorp.com/agent-inject-secret-config: "secureflow/data/transaction-service"
+        vault.hashicorp.com/agent-inject-template-config: |
+          {{- with secret "secureflow/data/transaction-service" -}}
+          DB_PASSWORD="{{ .Data.data.db_password }}"
+          DB_HOST="{{ .Data.data.db_host }}"
+          DB_NAME="{{ .Data.data.db_name }}"
+          DB_USER="{{ .Data.data.db_user }}"
+          {{- end }}
     spec:
+      serviceAccountName: transaction-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: transaction-service
-          image: secureflow/transaction-service:latest   # CK-06
+          image: transaction-service@sha256:1cbedda92ca228a5621ce0f0bb732b1c0807f630a753e13b717e5e1beea18207
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5002
-          envFrom:
-            - configMapRef:
-                name: secureflow-config
-          env:
-            - name: DB_HOST
-              value: transaction-db
-            - name: DB_NAME
-              value: transactiondb
-            - name: DB_USER
-              value: txuser
-            - name: DB_PASSWORD
-              valueFrom:
-                configMapKeyRef:
-                  name: secureflow-config
-                  key: TX_DB_PASSWORD
           securityContext:
-            privileged: true                # CK-04
-            allowPrivilegeEscalation: true  # CK-04
-            runAsUser: 0                    # CK-02
-          # CK-05 — no resources.
+            allowPrivilegeEscalation: false
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: transaction-service
   namespace: secureflow
+  labels:
+    app: transaction-service
+    team: devsecops
 spec:
   selector:
-    svc: transaction-service
+    app: transaction-service
   ports:
     - port: 5002
       targetPort: 5002

@@ -4,32 +4,43 @@ variable "vpc_id" { type = string }
 variable "public_subnet_ids" { type = list(string) }
 variable "db_password" { type = string }
 
-# Deliberately insecure RDS configuration — Checkov will flag multiple issues:
-# no storage encryption, publicly accessible, no automated backups, no deletion
-# protection, no enhanced monitoring, no Performance Insights encryption.
-
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project}-${var.environment}-db-subnet"
-  subnet_ids = var.public_subnet_ids # Public subnets — extends IV-10.
+  subnet_ids = var.public_subnet_ids
 }
 
 resource "aws_security_group" "db" {
-  name   = "${var.project}-${var.environment}-db-sg"
-  vpc_id = var.vpc_id
-
+  name        = "${var.project}-${var.environment}-db-sg"
+  description = "Database security group VPC only"
+  vpc_id      = var.vpc_id
   ingress {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # IV-02 at cloud scale — DB reachable from internet.
+    cidr_blocks = ["10.0.0.0/16"]
+    description = "PostgreSQL from VPC only"
   }
-
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+    description = "PostgreSQL to VPC only"
   }
+}
+
+resource "aws_iam_role" "rds_monitoring" {
+  name = "${var.project}-${var.environment}-rds-monitoring"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{ Action = "sts:AssumeRole" Effect = "Allow"
+      Principal = { Service = "monitoring.rds.amazonaws.com" } }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "rds_monitoring" {
+  role       = aws_iam_role.rds_monitoring.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }
 
 resource "aws_db_instance" "auth" {
@@ -40,16 +51,22 @@ resource "aws_db_instance" "auth" {
   allocated_storage      = 20
   db_name                = "authdb"
   username               = "authuser"
-  password               = var.db_password # IV-01 via Terraform variable.
+  password               = var.db_password
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.db.id]
-  publicly_accessible    = true  # Checkov CKV_AWS_17.
-  storage_encrypted      = false # Checkov CKV_AWS_16.
-  skip_final_snapshot    = true  # Checkov CKV_AWS_118.
-  deletion_protection    = false
-
-  # Deliberately missing: backup_retention_period, performance_insights_enabled,
-  # enabled_cloudwatch_logs_exports, iam_database_authentication_enabled.
+  publicly_accessible                 = false
+  storage_encrypted                   = true
+  skip_final_snapshot                 = false
+  deletion_protection                 = true
+  backup_retention_period             = 7
+  iam_database_authentication_enabled = true
+  auto_minor_version_upgrade          = true
+  multi_az                            = true
+  performance_insights_enabled        = true
+  performance_insights_kms_key_id     = "arn:aws:kms:eu-west-2:111122223333:key/placeholder"
+  enabled_cloudwatch_logs_exports     = ["postgresql", "upgrade"]
+  monitoring_interval                 = 60
+  monitoring_role_arn                 = aws_iam_role.rds_monitoring.arn
 }
 
 resource "aws_db_instance" "transactions" {
@@ -63,8 +80,17 @@ resource "aws_db_instance" "transactions" {
   password               = var.db_password
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.db.id]
-  publicly_accessible    = true
-  storage_encrypted      = false
-  skip_final_snapshot    = true
-  deletion_protection    = false
+  publicly_accessible                 = false
+  storage_encrypted                   = true
+  skip_final_snapshot                 = false
+  deletion_protection                 = true
+  backup_retention_period             = 7
+  iam_database_authentication_enabled = true
+  auto_minor_version_upgrade          = true
+  multi_az                            = true
+  performance_insights_enabled        = true
+  performance_insights_kms_key_id     = "arn:aws:kms:eu-west-2:111122223333:key/placeholder"
+  enabled_cloudwatch_logs_exports     = ["postgresql", "upgrade"]
+  monitoring_interval                 = 60
+  monitoring_role_arn                 = aws_iam_role.rds_monitoring.arn
 }

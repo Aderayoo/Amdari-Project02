@@ -1,0 +1,22 @@
+customRules:
+  secureflow-rules.yaml: |-
+    - rule: Shell spawned in container
+      desc: A shell was spawned inside a running container
+      condition: spawned_process and container and shell_procs
+      output: "Shell spawned in container (user=%user.name container=%container.name image=%container.image.repository shell=%proc.name)"
+      priority: WARNING
+      tags: [container, shell, secureflow]
+
+    - rule: Sensitive file read in container
+      desc: A sensitive file was read inside a container
+      condition: open_read and container and fd.name in (/etc/shadow, /etc/passwd)
+      output: "Sensitive file read (user=%user.name container=%container.name file=%fd.name)"
+      priority: CRITICAL
+      tags: [container, filesystem, secureflow]
+
+    - rule: Package manager executed in container
+      desc: A package manager ran inside a container at runtime
+      condition: spawned_process and container and proc.name in (apt, apt-get, yum, pip, pip3)
+      output: "Package manager executed (user=%user.name container=%container.name command=%proc.cmdline)"
+      priority: ERROR
+      tags: [container, package, secureflow]
